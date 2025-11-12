@@ -51,6 +51,8 @@ if __name__ == "__main__":
     #
     # Step 1. Collect and process data
     #
+    # It'll take a while to recollect data, so better to import previously collected one ../data/mod_orders_1000.json
+
     #mod_orders = get_orders_metadata(SAMPLE_SIZE)
     #for i in tqdm(mod_orders):
     #    i["page_url"] = f'https://mod.gov.ua/diyalnist/normativno-pravova-baza/{i["slug"]}'

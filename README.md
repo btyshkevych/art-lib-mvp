@@ -29,3 +29,9 @@ query.py mod_orders_db \"Передача квартир у комунальну
 - Документування, рефакторинг, перевикористання коду
 - Безпека й адміністрування БД, бек-апи
 - Доопрацювання інерфейсу у формі CLI інструменту або веб API
+
+## Weaviate and ollama dependencies
+```
+docker run -p 8080:8080 -p 50051:50051 cr.weaviate.io/semitechnologies/weaviate:1.34.0
+ollama run gemma3:270m
+```
