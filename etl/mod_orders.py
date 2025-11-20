@@ -10,7 +10,7 @@ from sentence_transformers import SentenceTransformer
 import weaviate
 import weaviate.classes as wvc
 from tqdm import tqdm
-from local_toolkit import clean_up_text
+from local_toolkit import clean_up_text, normalize_text
 
 
 def get_orders_metadata (size: int) -> list:
@@ -70,16 +70,28 @@ if __name__ == "__main__":
             
     #with open("../data/mod_orders.json", "w") as f:
     #    json.dump(mod_orders, f)
+    with open("../data/mod_orders_1000.json") as f:
+        mod_orders = json.load(f)
+
+    # Get rid of scanned documents and normalize text length
+    mod_orders = [i for i in mod_orders if len(i["text_content"]) > 10]
+    mod_orders_normalized = []
+    for order in mod_orders:
+        if len(re.split(r"\s", order["text_content"])) < 199:
+            order["text_content_chunk"] = order["text_content"]
+            mod_orders_normalized.append(order)
+        else:
+            for chunk in normalize_text(order["text_content"], 199, 50):
+                order_chunk = order.copy()
+                order_chunk["text_content_chunk"] = chunk
+                mod_orders_normalized.append(order_chunk)
 
     #
     # Step 2. Vectorize text using lang-uk/ukr-paraphrase-multilingual-mpnet-base
-    #    
-    with open("../data/mod_orders_1000.json") as f:
-        mod_orders = json.load(f)
-    
+    #        
     model = SentenceTransformer('lang-uk/ukr-paraphrase-multilingual-mpnet-base')
-    for i in mod_orders:
-        i["vector"] = model.encode(i["text_content"])
+    for i in tqdm(mod_orders_normalized):
+        i["vector"] = model.encode(i["text_content_chunk"])
     
     #
     # Step 3. Import to Weaviate
@@ -97,12 +109,13 @@ if __name__ == "__main__":
         )
 
     mod_orders_objs = list()
-    for i, d in enumerate(mod_orders):
+    for i, d in enumerate(mod_orders_normalized):
         mod_orders_objs.append(wvc.data.DataObject(
             properties={
             "title": d["title"],
             "page_url": d["page_url"],
             "text_content": d["text_content"],
+            "text_content_chunk": d["text_content_chunk"],
             "pdf_urls": d["pdf_urls"],
             },
             vector=d["vector"]
@@ -110,13 +123,15 @@ if __name__ == "__main__":
         )
 
     mod_orders_db = client.collections.use("mod_orders_db")
-    mod_orders_db.data.insert_many(mod_orders_objs)
+    for i in range(0, len(mod_orders_objs), 50):
+        mod_orders_db.data.insert_many(mod_orders_objs[i:i + 50])
+    
     client.close()
 
     #
     # Step 4. Back-up data
     #
-    for i in mod_orders:
+    for i in mod_orders_normalized:
         i["vector"] = i["vector"].tolist()
     with open("../data/mod_orders.json", "w") as f:
         json.dump(mod_orders, f)

@@ -1,3 +1,5 @@
+*.pem
+.env
 art-lib-env/
 pyvenv.cfg
 __pycache__/

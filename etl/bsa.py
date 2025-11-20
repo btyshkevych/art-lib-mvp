@@ -10,7 +10,10 @@ from local_toolkit import clean_up_text
 
 
 def split_to_chapters(text: str) -> list:
-    """The function splits continious text to paragraphs useing paragraph number as delimeter e.g. 1. 2. ... 456."""
+    """
+    The function splits continious text to paragraphs using paragraph number as delimeter e.g. 1. 2. ... 456.
+    Here I use approach chunking by semantic markers. More explanation: https://docs.weaviate.io/weaviate/starter-guides/generative
+    """
     chanks = re.split(r"(\d{1,3}\.\s{1})", text)
     chapters = []
     for i in range(1, len(chanks)-1):
@@ -25,7 +28,7 @@ def split_to_chapters(text: str) -> list:
 if __name__ == "__main__":
     
     #
-    # Step 1. Get and prepare plain text
+    # Step 1. Prepare text for vectorization
     #
     reader = pypdf.PdfReader("../data/БСА.pdf")
     bsa = " ".join([reader.pages[i].extract_text() for i in range(0, len(reader.pages))])
@@ -59,7 +62,7 @@ if __name__ == "__main__":
         bsa_objs.append(wvc.data.DataObject(
             properties={
             "number": d["number"],
-            "text": d["text"]
+            "text_content": d["text"]
             },
             vector=d["vector"]
             )
