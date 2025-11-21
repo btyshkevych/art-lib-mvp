@@ -3,6 +3,44 @@
 - Поділ на фрагменти тексту фіксованого розміру з накладанням (датасет - накази МОУ). У випадку конкретних словосполучень пошук показує себе добре. У випадку окремих ключових слів показує задовільні результати.
 - Поділ на тематичні розділи (датасет - бойовий статут артилерії). Пошук показує себе добре. Є передумови для подальшого створення і тестування Retrieval augmented generation (RAG). Наприклад, цікавою є ідея створення сервісу на складання іспитів на знання БСА. Де LLM буде перевіряти точність відповідей.
 
+Запустити на сервері:
+```
+# CONNECT
+ssh -i "path/to/key.pem" user@address
+
+# DOCKER
+# Check if weaviate docker container is running
+sudo docker ps
+# If container is inactive run container
+# sudo docker run -d -p 8080:8080 -p 50051:50051 cr.weaviate.io/semitechnologies/weaviate:1.34.0
+
+# PYTHON ENVIRONMENT
+cd art-lib-mvp
+source ENV/bin/activate
+
+# POPULATE THE DATABASE
+# This step is not needed. The database has been already populated. Althougth one can run it multiple times.
+# cd etl
+# python bsa.py
+# python mod_orders.py
+# cd ../
+
+# RUN QUERIES
+# Note, summarization useing LLM can take some time. Reduce number of results to have more or less instant result.
+# SEARCH IN MOD ORDERS
+# Returns 5 results in the form of text fragments
+python query.py mod_orders_db "Передача квартир у комунальну власність територіальної громади" 0.75 5 0
+# Returns 2 results in the form of summarized source documents of found fragments
+python query.py mod_orders_db "Передача квартир у комунальну власність територіальної громади" 0.75 2 1
+
+# SEARCH IN BSA
+# Returns 5 results in the form of chapters
+python query.py bsa_db "Бойовий наказ командира артилерійського дивізіону включає наступні розділи" 0.75 5 0
+# Returns 2 results in the form of summarized chapters
+python query.py bsa_db "Бойовий наказ командира артилерійського дивізіону включає наступні розділи" 0.75 2 1
+
+```
+
 Параметри:
 ```
 python query.py [джерело пошуку: bsa_db або mod_orders_db] [пошуковий запис (якщо словосполучення - використати лапки)] [релевантність від 0 до 1] [кількість результатів - число 1 і більше] [додати короткий зміст від LLM - 1 або 0]
@@ -40,5 +78,5 @@ python query.py mod_orders_db "Передача квартир у комунал
 
 ## Weaviate dependencies
 ```
-docker run -p 8080:8080 -p 50051:50051 cr.weaviate.io/semitechnologies/weaviate:1.34.0
+docker run -d -p 8080:8080 -p 50051:50051 cr.weaviate.io/semitechnologies/weaviate:1.34.0
 ```
